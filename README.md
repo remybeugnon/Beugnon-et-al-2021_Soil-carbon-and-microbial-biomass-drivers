@@ -1,4 +1,4 @@
-# Paper: Beugnon et al 2021: Abiotic and biotic drivers of scale-dependent tree trait effects on soil microbial biomass and soil carbon concentration
+# Paper: Beugnon et al 2022: Abiotic and biotic drivers of scale-dependent tree trait effects on soil microbial biomass and soil carbon concentration
 
 DOI:
 [![DOI](https://zenodo.org/badge/331020733.svg)](https://zenodo.org/badge/latestdoi/331020733)
