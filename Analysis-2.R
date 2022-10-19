@@ -1,6 +1,20 @@
+# R version 4.1.3 (2022-03-10)
+# Platform: aarch64-apple-darwin20 (64-bit)
+# Running under: macOS Monterey 12.6
+# Packages: 
+# - dplyr_1.0.9
+# - stringr_1.4.0
+# - arm_1.13-1
+# - lavaan_0.6-11
+# - readxl_1.4.0
+# - ggpubr_0.4.0
+# - ggplot2_3.3.5
+# - ggnewscale_0.4.7
+# - extrafont_0.18
+# - cowplot_1.1.1
+
 #### START ####
 rm(list = ls())
-setwd("C:/Users/rb44vuni/Nextcloud/Remy's Thesis/Beugnon et al. 2020")
 
 #### ~~~~~~~~~~~~~ ####
 #### > 0. Packages ####
@@ -27,19 +41,24 @@ df$CN.litterfall = df$C.litterfall / df$N.litterfall
 #### >> 2.1 Diversity effect ####
 
 r.1 = 'mic.bio'
-e.1 = c('Sp.rich', 'homo.hetero')
-df.1 = df %>% select(all_of(c(r.1,e.1))) %>% apply(., 2,rescale) %>% data.frame()
+e.1 = c('Sp.rich')
+df.1 = df %>% 
+  select(all_of(c(r.1,e.1))) %>% 
+  apply(., 2,rescale) %>% 
+  data.frame()
 
 form.1 =  as.formula('
       # Response
       mic.bio ~ 
       ## Diversity treatment
-      Sp.rich + homo.hetero')
+      Sp.rich')
 
 # Fit model
 model.1 = lm(data = df.1, formula = form.1)
+
 # Model selection based on AIC
 model.step.1 = step(model.1, direction = 'both', trace = F)
+
 # Summary
 summary(model.step.1)
 
@@ -47,13 +66,14 @@ summary(model.step.1)
 # Data
 r.2 = 'mic.bio'
 e.2 = c('C.litterfall', 'CN.litterfall', 
-        'neigh.biomass', 'TSP.biomass', 
+        'neigh.biomass', 
         'ENL',  
-        'TSP.FRic.SRL', 'TSP.FRic.RD','TSP.FRic.AM.ECM',
-        'TSP.SRL', 'TSP.RD', 'TSP.AM.ECM',
         'FDis.SRL', 'FDis.RD', 'FDis.AM.ECM',
         'SRL', 'RD', 'AM.ECM')
-df.2 = df %>% select(all_of(c(r.2,e.2))) %>% apply(., 2,rescale) %>% data.frame()
+df.2 = df %>%
+  select(all_of(c(r.2,e.2))) %>% 
+  apply(., 2,rescale) %>% 
+  data.frame()
 
 # Formula
 form.2 = as.formula('
@@ -65,14 +85,10 @@ form.2 = as.formula('
       C.litterfall + CN.litterfall +
       
       ## Tree biomass
-      neigh.biomass + TSP.biomass + 
+      neigh.biomass +
       
       ## Crown structure
       ENL +
-      
-      ## Trait at TSP level 
-      TSP.SRL + TSP.RD + TSP.AM.ECM + 
-      TSP.FRic.AM.ECM + TSP.FRic.SRL + TSP.FRic.RD +
       
       ## Traits at neighborhood level
       FDis.SRL + FDis.RD + FDis.AM.ECM +
@@ -80,40 +96,48 @@ form.2 = as.formula('
 
 # Fit model
 model.2 = lm(data = df.2, formula = form.2)
+
 # Model selection based on AIC
 model.step.2 = step(model.2, direction = 'both', trace = F)
+
 # Summary
 summary(model.step.2)
 
 #### >> 2.3 Link soil microbial biomass ~ soil C concentration ####
-mod.C = lm(data = df %>% select(mic.bio, Soil.C.2018) %>% apply(.,2,rescale) %>% data.frame(), 
-             formula = Soil.C.2018 ~ mic.bio) %>% summary
+mod.C = lm(data = df %>% 
+             select(mic.bio, Soil.C.2018) %>% 
+             apply(.,2,rescale) %>% 
+             data.frame(), 
+             formula = Soil.C.2018 ~ mic.bio) %>% 
+  summary
 
 
 #### >> 2.4 SEM Model ####
 v.4 = c('CURV_PR', 'CURV_PL', 'SLOPE', 'ALTITUDE', 
         'Soil.C.2010', 'Soil.C.2018', 
         'mic.bio',
-        'Sp.rich', 'homo.hetero',
+        'Sp.rich',
         'C.litterfall', 'CN.litterfall', 
-        'neigh.biomass', 'TSP.biomass', 
+        'neigh.biomass',
         'ENL', 
-        'TSP.SRL', 'TSP.RD', 'TSP.AM.ECM', 
-        'TSP.FRic.AM.ECM', 'TSP.FRic.SRL', 'TSP.FRic.RD',
         'FDis.SRL', 'FDis.RD', 'FDis.AM.ECM',
         'SRL', 'RD', 'AM.ECM')
-df.4 = df %>% select(all_of(v.4)) %>% apply(., 2, rescale) %>% data.frame()
+
+df.4 = df %>% 
+  select(all_of(v.4)) %>% 
+  apply(., 2, rescale) %>% 
+  data.frame()
 
 #### >>> 2.4.1 Microbial biomass -> Soil C ####
 mod.mic.C = '
-Soil.C.2018 ~ Soil.C.2010 + 
-              CURV_PL +
+Soil.C.2018 ~ Soil.C.2010 +
+              CURV_PR +
               CN.litterfall + ENL + 
-              TSP.RD + RD + 
+              RD + 
               mic.bio
 Soil.C.2010 ~ SLOPE + CURV_PL
 ENL ~ Sp.rich + SLOPE + CURV_PL + CURV_PR
-mic.bio ~ ENL + TSP.SRL + TSP.RD + FDis.SRL + RD
+mic.bio ~ FDis.SRL + FDis.AM.ECM + RD + AM.ECM
 '
 
 # Fitting
@@ -124,10 +148,10 @@ mod.C.mic = '
 Soil.C.2018 ~ Soil.C.2010 + 
               CURV_PL +
               CN.litterfall + ENL + 
-              TSP.RD + RD
+              RD
 Soil.C.2010 ~ SLOPE + CURV_PL
 ENL ~ Sp.rich + SLOPE + CURV_PL + CURV_PR
-mic.bio ~ ENL + TSP.SRL + TSP.RD + FDis.SRL + RD + Soil.C.2018
+mic.bio ~ FDis.SRL + FDis.AM.ECM + RD + AM.ECM + Soil.C.2018
 '
 
 # Fitting
@@ -138,10 +162,10 @@ mod.C..mic = '
 Soil.C.2018 ~ Soil.C.2010 + 
               CURV_PL +
               CN.litterfall + ENL + 
-              TSP.RD + RD
+              RD
 Soil.C.2010 ~ SLOPE + CURV_PL
 ENL ~ Sp.rich + SLOPE + CURV_PL + CURV_PR
-mic.bio ~ ENL + TSP.SRL + TSP.RD + FDis.SRL + RD
+mic.bio ~ FDis.SRL + FDis.AM.ECM + RD + AM.ECM
 mic.bio ~~ Soil.C.2018
 '
 
@@ -153,11 +177,11 @@ mod.C.mic.C = '
 Soil.C.2018 ~ Soil.C.2010 + 
               CURV_PL +
               CN.litterfall + ENL + 
-              TSP.RD + RD + 
+              RD + 
               mic.bio
 Soil.C.2010 ~ SLOPE + CURV_PL
 ENL ~ Sp.rich + SLOPE + CURV_PL + CURV_PR
-mic.bio ~ ENL + TSP.SRL + TSP.RD + FDis.SRL + RD + Soil.C.2018
+mic.bio ~ FDis.SRL + FDis.AM.ECM + RD + AM.ECM + Soil.C.2018
 '
 
 # Fitting
@@ -165,7 +189,7 @@ fit.C.mic.C = sem(mod.C.mic.C,df.4)
 summary(fit.C.mic.C)
 inspect(fit.C.mic.C, 'R2')
 
-summary(fit.C.mic)
+summary(fit.C.mic, standardized = T)
 inspect(fit.C.mic, 'R2')
 # Model comparison 
 fitMeasures(fit.C..mic)['aic']
@@ -193,14 +217,12 @@ sum.mod.1$vars =
 df.plot.1 = 
   sum.mod.1 %>%  
   filter(rownames(.) != "(Intercept)") %>%                  # Remove Intercept row
-  dplyr::select(-t.value) %>%                                       # Remove t.value
-  set_colnames(c('Estimate', 'SE', 'p-value','vars')) %>%   # Rename
+  dplyr::select(Estimate, 'SE' = Std..Error, 'p-value' = Pr...t..,vars) %>%   # Rename
   right_join(x = . , y = data.frame(vars = e.1), by = c('vars')) # Add levels and labels
 
 # Set names as factors
 df.plot.1$name = df.plot.1$vars %>%
   str_replace_all('Sp.rich', 'Neigh. sp. rich.') %>%
-  str_replace_all('homo.hetero', 'TSP sp. rich.') %>%
   factor
 
 # Calculate confidence interval 
@@ -248,8 +270,7 @@ sum.mod.2$vars =
 df.plot.2 = 
   sum.mod.2 %>%  
   filter(rownames(.) != "(Intercept)") %>%                  # Remove Intercept row
-  dplyr::select(-t.value) %>%                                       # Remove t.value
-  set_colnames(c('Estimate', 'SE', 'p-value','vars')) %>%   # Rename
+  dplyr::select(Estimate, 'SE' = Std..Error, 'p-value'=Pr...t..,vars) %>%   # Rename
   right_join(x = . , y = data.frame(vars = e.2), by = c('vars')) # Add levels and labels
 
 # Set names as factors
@@ -257,10 +278,13 @@ df.plot.2$name = df.plot.2$vars %>%
   str_replace_all('\\.', ' ')
 df.plot.2$name = df.plot.2$name %>%
   str_replace_all('FDis AM ECM', 'FDis AM/EM') %>%
-  str_replace_all('TSP AM ECM', 'TSP AM/EM') %>%
-  str_replace_all('TSP FRic AM ECM', 'TSP FRic AM/EM') %>% 
   str_replace_all('AM ECM', 'AM/EM') 
-df.plot.2$name = factor(df.plot.2$name, levels = df.plot.2$name)
+e.2 = e.2 %>%
+  str_replace_all('\\.', ' ') %>%
+  str_replace_all('FDis AM ECM', 'FDis AM/EM') %>%
+  str_replace_all('AM ECM', 'AM/EM') 
+
+df.plot.2$name = factor(df.plot.2$name, levels = e.2)
 
 # Calculate confidence interval 
 df.plot.2$ymax = df.plot.2$Estimate + 1.96 * df.plot.2$SE
@@ -325,6 +349,7 @@ df.plot.4$AIC = df.plot.4$AIC %>% round(0)
 df.plot.4$CFI = df.plot.4$CFI %>% round(3)
 df.plot.4$RMSEA = df.plot.4$RMSEA %>% round(3)
 df.plot.4$SRMR = df.plot.4$SRMR %>% round(3)
+
 p.dir =
   ggplot(data = df.plot.4, aes(x = 1, y = dir, label = write)) + 
   geom_text(data = df.plot.4, aes(x = '1', y = dir, label = AIC), size = (text.size - 8)) +
@@ -351,4 +376,4 @@ parameterEstimates(fit.C.mic.C, standardized = T) %>%
   select(lhs, op, rhs, std.all, pvalue)
 inspect(fit.C.mic.C, 'R2')
 
-save.image("C:/Users/rb44vuni/Nextcloud/Remy's Thesis/Beugnon et al. 2020/Git_repository/Beugnon-et-al-2020_Abiotic-biotic-mediations-of-scale-dependent-tree-trait-effects-on-soil-carbon/H2-mod.RData")
+save.image("H2-mod.RData")

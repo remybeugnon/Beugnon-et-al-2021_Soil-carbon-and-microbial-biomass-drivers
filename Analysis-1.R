@@ -1,6 +1,20 @@
+# R version 4.1.3 (2022-03-10)
+# Platform: aarch64-apple-darwin20 (64-bit)
+# Running under: macOS Monterey 12.6
+# Packages: 
+# - dplyr_1.0.9
+# - stringr_1.4.0
+# - arm_1.13-1
+# - lavaan_0.6-11
+# - readxl_1.4.0
+# - ggpubr_0.4.0
+# - ggplot2_3.3.5
+# - ggnewscale_0.4.7
+# - extrafont_0.18
+# - cowplot_1.1.1
+
 #### START ####
 rm(list = ls())
-setwd("C:/Users/rb44vuni/Nextcloud/Remy's Thesis/Beugnon et al. 2020")
 
 #### ~~~~~~~~~~~~~ ####
 #### > 0. Packages ####
@@ -14,6 +28,7 @@ libs <- c(
 )
 invisible(lapply(libs, library, character.only = T))
 select = dplyr::select
+
 #### ~~~~~~~~~~~~~~~~~~ ####
 #### > 1. Data handling ####
 #### ~~~~~~~~~~~~~~~~~~ ####
@@ -43,7 +58,7 @@ summary(model.step.1)
 #### >> 2.2 Soil history, topography and tree diversity treatment effects on soil carbon concentration ####
 
 r.2 = 'Soil.C.2018'
-e.2 = c('CURV_PR', 'CURV_PL', 'SLOPE', 'ALTITUDE', 'Soil.C.2010', 'Sp.rich', 'homo.hetero')
+e.2 = c('CURV_PR', 'CURV_PL', 'SLOPE', 'ALTITUDE', 'Soil.C.2010', 'Sp.rich')
 df.2 = df %>% select(all_of(c(r.2,e.2))) %>% apply(., 2,rescale) %>% data.frame()
 
 form.2 =  as.formula('
@@ -53,7 +68,7 @@ form.2 =  as.formula('
       ## Topography
       CURV_PR + CURV_PL + SLOPE + 
       ## Diversity treatment
-      Sp.rich + homo.hetero +
+      Sp.rich + 
       ## Soil cencentration in 2010
       Soil.C.2010')
 
@@ -70,13 +85,13 @@ r.3 = 'Soil.C.2018'
 e.3 = c('ALTITUDE','CURV_PL', 'CURV_PR',  'SLOPE', 
         'Soil.C.2010', 
         'C.litterfall', 'CN.litterfall', 
-        'neigh.biomass', 'TSP.biomass', 
+        'neigh.biomass',
         'ENL', 
-        'TSP.FRic.SRL', 'TSP.FRic.RD','TSP.FRic.AM.ECM', 
-        'TSP.SRL', 'TSP.RD', 'TSP.AM.ECM', 
         'FDis.SRL', 'FDis.RD', 'FDis.AM.ECM',
         'SRL', 'RD', 'AM.ECM')
-df.3 = df %>% select(all_of(c(r.3,e.3))) %>% apply(., 2,rescale) %>% data.frame()
+df.3 = df %>% 
+  select(all_of(c(r.3,e.3))) %>% 
+  apply(., 2,rescale) %>% data.frame()
 
 # Formula
 form.3 = as.formula('
@@ -91,15 +106,11 @@ form.3 = as.formula('
       C.litterfall + CN.litterfall +
       
       ## Tree biomass
-      neigh.biomass + TSP.biomass + 
+      neigh.biomass + 
       
       ## Crown structure
       ENL +
-      
-      ## Trait at TSP level 
-      TSP.SRL + TSP.RD + TSP.AM.ECM + 
-      TSP.FRic.AM.ECM + TSP.FRic.SRL + TSP.FRic.RD +
-      
+
       ## Traits at neighborhood level
       FDis.SRL + FDis.RD + FDis.AM.ECM +
       SRL + RD + AM.ECM +
@@ -108,48 +119,63 @@ form.3 = as.formula('
       Soil.C.2010')
 
 # Fit model
-model.3 = lm(data = df.3, formula = form.3)
+model.3 = lm(data = df.3, 
+             formula = form.3)
+
 # Model selection based on AIC
-model.step.3 = step(model.3, direction = 'both', trace = T)
+model.step.3 = step(model.3, 
+                    direction = 'both', 
+                    trace = T)
+
 # Summary
 summary(model.step.3)
 
 #### >> 2.4 Tree species richness effects on forest productivity ####
+mod.neigh.biomass = lm(data = df %>% 
+                         select(Sp.rich, neigh.biomass) %>% 
+                         apply(.,2,rescale) %>% data.frame(), 
+                     formula = neigh.biomass ~ Sp.rich) %>% 
+  summary
 
-mod.TSP.biomass = lm(data = df %>% select(homo.hetero, TSP.biomass, Sp.rich) %>% apply(.,2,rescale) %>% data.frame(), 
-             formula = TSP.biomass ~ homo.hetero + Sp.rich) %>% summary
+mod.lit = lm(data = df %>% select(Sp.rich, C.litterfall) %>% 
+               apply(.,2,rescale) %>% 
+               data.frame(), 
+             formula = C.litterfall ~ Sp.rich) %>% 
+  summary
 
-mod.neigh.biomass = lm(data = df %>% select(Sp.rich, neigh.biomass) %>% apply(.,2,rescale) %>% data.frame(), 
-                     formula = neigh.biomass ~ Sp.rich) %>% summary
+mod.lit.CN = lm(data = df %>% 
+                  select(Sp.rich, CN.litterfall) %>% 
+                  apply(.,2,rescale) %>% 
+                  data.frame(), 
+             formula = CN.litterfall ~ Sp.rich) %>% 
+  summary
 
-mod.lit = lm(data = df %>% select(Sp.rich, C.litterfall) %>% apply(.,2,rescale) %>% data.frame(), 
-             formula = C.litterfall ~ Sp.rich) %>% summary
-
-mod.lit.CN = lm(data = df %>% select(Sp.rich, CN.litterfall) %>% apply(.,2,rescale) %>% data.frame(), 
-             formula = CN.litterfall ~ Sp.rich) %>% summary
-
-mod.ENL = lm(data = df %>% select(Sp.rich, ENL, SLOPE, CURV_PL, CURV_PR) %>% apply(.,2,rescale) %>% data.frame(), 
-             formula = ENL ~ Sp.rich + SLOPE + CURV_PL + CURV_PR) %>% step(direction = 'both') %>% summary
+mod.ENL = lm(data = df %>% select(Sp.rich, ENL, SLOPE, CURV_PL, CURV_PR) %>% 
+               apply(.,2,rescale) %>% data.frame(), 
+             formula = ENL ~ Sp.rich + SLOPE + CURV_PL + CURV_PR) %>% 
+  step(direction = 'both', trace = F) %>% 
+  summary
 
 #### >> 2.5 SEM Model ####
-
 v.4 = c('CURV_PR', 'CURV_PL', 'SLOPE', 'ALTITUDE', 
         'Soil.C.2010', 'Soil.C.2018', 
-        'Sp.rich', 'homo.hetero',
+        'Sp.rich',
         'C.litterfall', 'CN.litterfall', 
-        'neigh.biomass', 'TSP.biomass', 
+        'neigh.biomass', 
         'ENL', 
-        'TSP.FRic.SRL', 'TSP.FRic.RD', 'TSP.FRic.AM.ECM', 
-        'TSP.SRL', 'TSP.RD', 'TSP.AM.ECM',
         'FDis', 'FDis.SRL', 'FDis.RD', 'FDis.AM.ECM',
         'SRL', 'RD', 'AM.ECM')
-df.4 = df %>% select(all_of(v.4)) %>% apply(., 2, rescale) %>% data.frame()
+
+df.4 = df %>% 
+  select(all_of(v.4)) %>% 
+  apply(., 2, rescale) %>% 
+  data.frame()
 
 mod = '
 Soil.C.2018 ~ Soil.C.2010 + 
-              CURV_PL +
+              CURV_PR +
               CN.litterfall + ENL + 
-              TSP.RD + RD
+              RD
 Soil.C.2010 ~ SLOPE + CURV_PL
 ENL ~ Sp.rich + SLOPE + CURV_PL + CURV_PR
 '
@@ -158,7 +184,7 @@ ENL ~ Sp.rich + SLOPE + CURV_PL + CURV_PR
 fit = sem(mod,df.4)
 
 # Model summary
-summary(fit)
+summary(fit, standardized = T)
 inspect(fit, 'R2')
 fitMeasures(fit)
 
@@ -202,8 +228,7 @@ sum.mod.1$vars =
 df.plot.1 = 
   sum.mod.1 %>%  
   filter(rownames(.) != "(Intercept)") %>%                  # Remove Intercept row
-  dplyr::select(-t.value) %>%                                       # Remove t.value
-  set_colnames(c('Estimate', 'SE', 'p-value','vars')) %>%   # Rename
+  dplyr::select(Estimate, 'SE' = Std..Error, 'p-value'=Pr...t..,vars) %>%   # Rename
   right_join(x = . , y = data.frame(vars = e.1), by = c('vars')) # Add levels and labels
 
 # Set names as factors
@@ -260,8 +285,7 @@ sum.mod.2$vars =
 df.plot.2 = 
   sum.mod.2 %>%  
   filter(rownames(.) != "(Intercept)") %>%                  # Remove Intercept row
-  dplyr::select(-t.value) %>%                                       # Remove t.value
-  set_colnames(c('Estimate', 'SE', 'p-value','vars')) %>%   # Rename
+  dplyr::select(Estimate, 'SE'=Std..Error, 'p-value'=Pr...t..,vars) %>%   # Rename
   right_join(x = . , y = data.frame(vars = e.2), by = c('vars')) # Add levels and labels
 
 # Set names as factors
@@ -271,7 +295,6 @@ df.plot.2$name = df.plot.2$vars %>%
   str_replace_all('CURV_PL', 'Curvature PL') %>%
   str_replace_all('ALTITUDE', 'Altitude') %>%
   str_replace_all('Sp.rich', 'Sp. rich.') %>%
-  str_replace_all('homo.hetero', 'TSP sp. rich.') %>%
   str_replace_all('Soil.C.2010', '[C] 2010') %>%
   factor()
 
@@ -322,8 +345,7 @@ sum.mod.3$vars =
 df.plot.3 = 
   sum.mod.3 %>%  
   filter(rownames(.) != "(Intercept)") %>%                  # Remove Intercept row
-  dplyr::select(-t.value) %>%                                       # Remove t.value
-  set_colnames(c('Estimate', 'SE', 'p-value','vars')) %>%   # Rename
+  dplyr::select(Estimate, 'SE'=Std..Error, 'p-value'=Pr...t..,vars) %>%   # Rename
   right_join(x = . , y = data.frame(vars = e.3), by = c('vars')) # Add levels and labels
 
 # Set names as factors
@@ -335,12 +357,20 @@ df.plot.3$name = df.plot.3$vars %>%
   str_replace_all('\\.', ' ') %>% 
   str_replace_all('AM ECM', 'AM/EM') %>%
   str_replace_all('FDis AM ECM', 'FDis AM/EM') %>%
-  str_replace_all('TSP AM ECM', 'TSP AM/EM') %>%
-  str_replace_all('TSP FRic AM ECM', 'TSP FRic AM/EM') %>%
+  str_replace_all('Soil C 2010', '[C] 2010')
+
+e.3 = e.3 %>%
+  str_replace_all('SLOPE', 'Slope') %>%
+  str_replace_all('CURV_PR', 'Curvature PR') %>%
+  str_replace_all('CURV_PL', 'Curvature PL') %>%
+  str_replace_all('ALTITUDE', 'Altitude') %>%
+  str_replace_all('\\.', ' ') %>% 
+  str_replace_all('AM ECM', 'AM/EM') %>%
+  str_replace_all('FDis AM ECM', 'FDis AM/EM') %>%
   str_replace_all('Soil C 2010', '[C] 2010')
 
 df.plot.3$name = df.plot.3$name %>%
-  factor(levels = df.plot.3$name)
+  factor(levels = e.3)
 
 # df.plot.3$color = c(rep('black', 4), 'brown', 'green', 'green')
 # Calculate confidence interval 
@@ -380,11 +410,11 @@ p.soil.2018.drivers.3 =
 
 #### >> 3.5. Diversity effect on productivity ####
 df.plot.4 = data.frame(
-  resp = c('TSP biomass', 'neigh. biomass', 'C litterfall', bquote('ENL')),
-  div.effec = c(mod.TSP.biomass$coefficients['Sp.rich', 'Estimate'], mod.neigh.biomass$coefficients['Sp.rich', 'Estimate'], 
+  resp = c('neigh. biomass', 'C litterfall', bquote('ENL')),
+  div.effec = c(mod.neigh.biomass$coefficients['Sp.rich', 'Estimate'], 
                 mod.lit$coefficients['Sp.rich', 'Estimate'],
                 mod.ENL$coefficients['Sp.rich', 'Estimate']),
-  pval = c(mod.TSP.biomass$coefficients['Sp.rich', 'Pr(>|t|)'], mod.neigh.biomass$coefficients['Sp.rich', 'Pr(>|t|)'], 
+  pval = c(mod.neigh.biomass$coefficients['Sp.rich', 'Pr(>|t|)'], 
            mod.lit$coefficients['Sp.rich', 'Pr(>|t|)'], 
            mod.ENL$coefficients['Sp.rich', 'Pr(>|t|)'])
 )
@@ -410,6 +440,7 @@ p.sp.rich =
         axis.text.y = element_text(size = text.size),
         plot.margin = margin(t = 1.5, r = .5, b = .1, l = .5, "cm"))
 
+# p.sp.rich
 
 #### >> 3.6. Together ####
 
@@ -423,4 +454,4 @@ parameterEstimates(fit, standardized = T) %>%
   select(lhs, op, rhs, std.all, pvalue)
 inspect(fit, 'R2')
 
-# save.image("C:/Users/rb44vuni/Nextcloud/Remy's Thesis/Beugnon et al. 2020/Git_repository/Beugnon-et-al-2020_Abiotic-biotic-mediations-of-scale-dependent-tree-trait-effects-on-soil-carbon/H1-mod.RData")
+save.image("H1-mod.RData")
