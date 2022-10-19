@@ -32,7 +32,10 @@ H3-mod.RData: Analyses-3.R outputs
 
 ## R session
 
-R version 4.1.3 (2022-03-10) Platform: aarch64-apple-darwin20 (64-bit)
+R version 4.1.3 (2022-03-10) 
+
+Platform: aarch64-apple-darwin20 (64-bit)
+
 Running under: macOS Monterey 12.6
 
 Packages:
